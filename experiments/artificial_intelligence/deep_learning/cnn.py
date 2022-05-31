@@ -8,7 +8,6 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from tkinter import W, mainloop
 import tkinter as tk
-import pywin
 from PIL import ImageGrab, Image
 import numpy as np
 
@@ -40,12 +39,12 @@ class CNN(nn.Module):
 
 net=CNN()
 print(net)
-lnr=0.01
+lr=0.01
 batch=200
-epochs=5
+epochs=1
 
-ukr=optim.Adam(net.parameters(),lr=lnr)
-usa=nn.CrossEntropyLoss()
+optimizer=optim.Adam(net.parameters(), lr=lr)
+loss_func=nn.CrossEntropyLoss()
 test_data = datasets.MNIST("../data",
                                        train=False,
                                        transform=transforms.ToTensor())
@@ -56,6 +55,7 @@ train_data = datasets.MNIST("../data",
 train_loader=DataLoader(train_data, batch_size=batch,shuffle=True)
 test_loader=DataLoader(test_data, batch_size=batch,shuffle=True)
 
+# VIEW MNIST DATASET
 # figure = plt.figure(figsize=(10, 8))
 # cols, rows = 10, 10
 # for i in range(1, cols * rows + 1):
@@ -66,18 +66,19 @@ test_loader=DataLoader(test_data, batch_size=batch,shuffle=True)
 #     plt.axis("off")
 #     plt.imshow(img.squeeze(),cmap="gray")
 # plt.show()
+
 net.train()
 total_step=len(train_loader)
 for epoch in range(epochs):
     for batchid,(data,target) in enumerate(train_loader):
         data, target=Variable(data),Variable(target)
         output=net(data)[0]
-        loss=usa(output,target)
-        ukr.zero_grad()
+        loss=loss_func(output, target)
+        optimizer.zero_grad()
         loss.backward()
-        ukr.step()
+        optimizer.step()
         if batchid %10==0:
-            print("черт ебаный хуярь: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(epoch,batchid*len(data),len(train_loader.dataset),
+            print("Train epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(epoch,batchid*len(data),len(train_loader.dataset),
                                                                            100. * batchid/len(train_loader),loss.data.item()))
 #
 net.eval()
@@ -89,7 +90,7 @@ with torch.no_grad():
         pred_y=torch.max(test_output,1)[1].data.squeeze()
         accuracy=(pred_y==targets).sum().item() /float(targets.size(0))
 
-print("acceracy={:.2f}".format(accuracy))
+print("Accuracy={:.2f}".format(accuracy))
 
 
 def predict_digit(img):
@@ -134,8 +135,7 @@ class App(tk.Tk):
         self.canvas.delete("all")
 
     def classify_handwriting(self):
-        HWND = self.canvas.winfo_id()
-        c=0
+        #im = ImageGrab.grab(bbox=self.canvas)
         im = ImageGrab.grab((10, 35, 300, 320))
 
         digit, acc = predict_digit(im)

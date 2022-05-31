@@ -21,11 +21,11 @@ class Net(nn.Module):
 
 net=Net()
 print(net)
-lnr=0.01
+lr=0.001
 batch=200
-epochs=1
-ukr=optim.Adam(net.parameters(),lr=lnr)
-usa=nn.NLLLoss()
+epochs=10
+optimizer=optim.Adam(net.parameters(), lr=lr)
+loss_func=nn.NLLLoss()
 train_loader=DataLoader(datasets.MNIST("../data",
                                        train=True,
                                        download=True,
@@ -40,13 +40,13 @@ for epoch in range(epochs):
     for batchid,(data,target) in enumerate(train_loader):
         data, target=Variable(data),Variable(target)
         data=data.view(-1,28*28)
-        ukr.zero_grad()
+        optimizer.zero_grad()
         output=net(data)
-        loss=usa(output,target)
+        loss=loss_func(output, target)
         loss.backward()
-        ukr.step()
+        optimizer.step()
         if batchid %10==0:
-            print("train черт ебаный хуярь epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(epoch,batchid*len(data),len(train_loader.dataset),
+            print("train epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(epoch,batchid*len(data),len(train_loader.dataset),
                                                                            100. * batchid/len(train_loader),loss.data.item()))
 
 test_loss=0
@@ -55,9 +55,9 @@ for data,target in test_loader:
     data,target=Variable(data,volatile=True),Variable(target)
     data = data.view(-1, 28 * 28)
     output=net(data)
-    test_loss+=usa(output,target).item()
+    test_loss+=loss_func(output, target).item()
     pred=output.data.max(1)[1]
     correct+=pred.eq(target.data).sum()
 
 test_loss/=len(test_loader.dataset)
-print("\n test set: average loss: {:.4f}, ocursemen:{}/{} ({:.0f}%)\n".format(test_loss,correct,len(test_loader.dataset),100. * correct / len(test_loader.dataset)))
+print("\n test set: average loss: {:.4f}, Accuracy:{}/{} ({:.0f}%)\n".format(test_loss,correct,len(test_loader.dataset),100. * correct / len(test_loader.dataset)))
